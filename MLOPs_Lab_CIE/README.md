@@ -28,16 +28,19 @@ MLOPs_Lab_CIE/
 │── src/
 │   ├── train.py                # Phase 1 — model training & MLflow logging
 │   ├── tune.py                 # Phase 2 — hyperparameter grid search
-│   ├── register.py             # Phase 3 — final model registration
+│   ├── register_model.py       # Phase 3 — final model registration
 │   ├── retrain.py              # Phase 4 — retraining & promotion pipeline
 │   └── validate.py             # Phase 5 — full validation & sanity checks
-│── models/                     # Reserved for serialised model artefacts
+│── models/
+│   ├── cartwave_v1_final.pkl       # Phase 3 registered model export
+│   └── cartwave_v2_promoted.pkl    # Phase 4 promoted model export
 │── results/
 │   ├── step1_s1.json           # Phase 1 output
 │   ├── step2_s2.json           # Phase 2 output
 │   ├── step3_s6.json           # Phase 3 output
 │   └── step4_s8.json           # Phase 4 output
 │── README.md
+│── requirements.txt
 ```
 
 **Features used for training:**
@@ -68,9 +71,10 @@ Both models were trained with default hyperparameters (`random_state=42`) on an 
 | GradientBoostingRegressor | 8.4448 | 11.0203 | -1.2814 |
 
 **Best Model:** `RandomForestRegressor`
-**Best RMSE:** `10.7040`
+**Best Metric:** `rmse`
+**Best Metric Value:** `10.7040`
 
-> The negative R² values are expected given the small dataset size (25 samples); the model still generalises comparatively better across phases as data grows.
+> The negative R² values are expected given the small dataset size (25 samples); the model generalises comparatively better as data grows in Phase 4.
 
 ---
 
@@ -106,6 +110,7 @@ Both models were trained with default hyperparameters (`random_state=42`) on an 
 |---|---|
 | Best CV MAE | 4.1942 |
 | Best MAE (test) | 7.8928 |
+| Parent run name | `tuning-cartwave` |
 
 ### MLflow Structure
 
@@ -121,7 +126,7 @@ Both models were trained with default hyperparameters (`random_state=42`) on an 
 
 ## 📦 5. Phase 3 — Model Registry
 
-**Script:** `src/register.py`
+**Script:** `src/register_model.py`
 **MLflow Run:** `final-model-cartwave`
 
 The best model (tuned `RandomForestRegressor`) was retrained on the original training split and registered in the MLflow Model Registry.
@@ -132,7 +137,8 @@ The best model (tuned `RandomForestRegressor`) was retrained on the original tra
 |---|---|
 | Registered model name | `cartwave-return-probability-pct-predictor` |
 | Version | `1` |
-| Run ID | `ca41cd85e8d0483884ff5731a755bc64` |
+| Run ID | `3ed79048bdd741cca07d7b46f4325d89` |
+| Source metric | `rmse` |
 | RMSE | `10.4325` |
 
 **What is the Model Registry?**
@@ -166,7 +172,7 @@ New data arrived, simulating real-world distribution shift (higher prices, longe
 
 | Metric | Value |
 |---|---|
-| Improvement | 17.0781 |
+| Improvement (`champion_rmse − retrained_rmse`) | 17.0781 |
 | Minimum threshold | 1.0 |
 | **Action** | **`promoted`** |
 
@@ -180,17 +186,18 @@ The retrained model cleared the threshold by a wide margin. It was registered as
 
 | Run Name | Phase | What's Tracked |
 |---|---|---|
-| *(Phase 1 runs)* | Training | Model type, MAE, RMSE, R², `domain` tag |
-| `tuning-cartwave` | Tuning | Search config, best params, best metrics |
-| `trial_01` … `trial_18` | Tuning (nested) | Per-combination params, MAE, RMSE, CV_MAE |
-| `final-model-cartwave` | Registration | Tuned params, MAE, RMSE, R², model artifact |
-| `retrain-cartwave` | Retraining | Combined row count, champion/retrained RMSE, improvement, action |
+| `RandomForestRegressor` | Phase 1 | Params, MAE, RMSE, R², `domain` tag |
+| `GradientBoostingRegressor` | Phase 1 | Params, MAE, RMSE, R², `domain` tag |
+| `tuning-cartwave` | Phase 2 | Search config, best params, best metrics |
+| `trial_01` … `trial_18` | Phase 2 (nested) | Per-combination params, MAE, RMSE, CV_MAE |
+| `final-model-cartwave` | Phase 3 | Tuned params, MAE, RMSE, R², model artifact |
+| `retrain-cartwave` | Phase 4 | Row counts, champion/retrained RMSE, improvement, action |
 
 **Tracked across all runs:**
 - **Parameters** — model hyperparameters, search config, data split settings
 - **Metrics** — MAE, RMSE, R², CV MAE, improvement delta
 - **Tags** — `domain = "e-commerce"`, `phase`, `trial` index
-- **Artifacts** — serialised `sklearn` model (logged via `mlflow.sklearn.log_model`)
+- **Artifacts** — serialised `sklearn` model (via `mlflow.sklearn.log_model`)
 - **Registry** — 2 versioned entries under `cartwave-return-probability-pct-predictor`
 
 To explore all runs interactively:
@@ -213,14 +220,28 @@ python -m venv .venv && source .venv/bin/activate
 pip install pandas scikit-learn mlflow
 
 # Execute phases in order
-python src/train.py      # Phase 1 — training & tracking
-python src/tune.py       # Phase 2 — hyperparameter tuning
-python src/register.py   # Phase 3 — model registration
-python src/retrain.py    # Phase 4 — retraining & promotion
+python src/train.py           # Phase 1 — training & tracking
+python src/tune.py            # Phase 2 — hyperparameter tuning
+python src/register_model.py  # Phase 3 — model registration
+python src/retrain.py         # Phase 4 — retraining & promotion
 
 # Validate everything
-python src/validate.py   # Phase 5 — sanity checks (exit 0 = all pass)
+python src/validate.py        # Phase 5 — sanity checks (exit 0 = all pass)
 ```
+
+---
+
+## ✅ Validation Summary (Phase 5)
+
+```json
+{
+  "status": "PASS",
+  "checks_passed": 9,
+  "errors": []
+}
+```
+
+All checks passed including: file structure, JSON schema integrity, MLflow experiment/run/registry verification, logical consistency across all 4 phases, and bit-for-bit reproducibility with `random_state=42`.
 
 ---
 

@@ -52,7 +52,7 @@ required_data = ["data/training_data.csv", "data/new_data.csv"]
 for f in required_data:
     check(f"Data file exists: {f}", (BASE / f).is_file())
 
-required_src = ["src/train.py", "src/tune.py", "src/register.py", "src/retrain.py"]
+required_src = ["src/train.py", "src/tune.py", "src/register_model.py", "src/retrain.py"]
 for f in required_src:
     check(f"Source file exists: {f}", (BASE / f).is_file())
 
@@ -63,9 +63,9 @@ section("2 · JSON File Validation")
 
 JSON_SPECS = {
     "results/step1_s1.json": {
-        "required_keys": ["RandomForestRegressor", "GradientBoostingRegressor",
-                          "best_model", "best_rmse"],
-        "numeric_keys":  ["best_rmse"],
+        "required_keys": ["experiment_name", "models", "best_model",
+                          "best_metric_name", "best_metric_value", "best_rmse"],
+        "numeric_keys":  ["best_metric_value", "best_rmse"],
     },
     "results/step2_s2.json": {
         "required_keys": ["search_type", "n_folds", "total_trials",
@@ -254,7 +254,7 @@ try:
         m = Cls(random_state=42)
         m.fit(X_train, y_train)
         rmse = float(np.sqrt(mean_squared_error(y_test, m.predict(X_test))))
-        stored = s1.get(name, {}).get("RMSE", None)
+        stored = s1.get("models", {}).get(name, {}).get("RMSE", None)
         if stored is not None:
             close = abs(rmse - stored) < TOLERANCE
             check(f"Phase 1 RMSE reproducible for {name}",

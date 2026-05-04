@@ -20,7 +20,8 @@ def main():
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
     # Setup MLflow
-    mlflow.set_experiment("cartwave-return-probability-pct")
+    EXPERIMENT_NAME = "cartwave-return-probability-pct"
+    mlflow.set_experiment(EXPERIMENT_NAME)
     
     models = {
         "RandomForestRegressor": RandomForestRegressor(random_state=42),
@@ -69,17 +70,29 @@ def main():
                 best_rmse = rmse
                 best_model_name = model_name
 
-    # Save results to JSON
+
+    # Save results to JSON — schema matches final checklist requirements
     output_data = {
-        **results,
-        "best_model": best_model_name,
-        "best_rmse": best_rmse
+        "experiment_name": EXPERIMENT_NAME,
+        "models": {
+            model_name: {
+                "MAE":  results[model_name]["MAE"],
+                "RMSE": results[model_name]["RMSE"],
+                "R2":   results[model_name]["R2"],
+            }
+            for model_name in results
+        },
+        "best_model":        best_model_name,
+        "best_metric_name":  "rmse",
+        "best_metric_value": best_rmse,
+        # keep best_rmse alias so downstream scripts (tune/register/retrain) still work
+        "best_rmse":         best_rmse,
     }
-    
+
     os.makedirs('results', exist_ok=True)
     with open('results/step1_s1.json', 'w') as f:
         json.dump(output_data, f, indent=4)
-        
+
     print(f"Results saved. Best model: {best_model_name} with RMSE: {best_rmse:.4f}")
 
 if __name__ == '__main__':
