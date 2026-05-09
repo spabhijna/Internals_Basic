@@ -1,0 +1,7 @@
+{
+    "registered_model_name": "cartwave-return-probability-pct-predictor",
+    "version": 1,
+    "run_id": "3ed79048bdd741cca07d7b46f4325d89",
+    "source_metric": "rmse",
+    "source_metric_value": 10.43245110025102
+}

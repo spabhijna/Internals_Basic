@@ -40,6 +40,4 @@ venv.bak/
 *.swp
 *.swo
 
-# Project specific
-models/
-results/
+

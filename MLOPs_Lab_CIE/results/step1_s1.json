@@ -1,0 +1,19 @@
+{
+    "experiment_name": "cartwave-return-probability-pct",
+    "models": {
+        "RandomForestRegressor": {
+            "MAE": 8.283480000000022,
+            "RMSE": 10.704015468785547,
+            "R2": -1.152276308178704
+        },
+        "GradientBoostingRegressor": {
+            "MAE": 8.44482544329389,
+            "RMSE": 11.020347704271337,
+            "R2": -1.28136704328461
+        }
+    },
+    "best_model": "RandomForestRegressor",
+    "best_metric_name": "rmse",
+    "best_metric_value": 10.704015468785547,
+    "best_rmse": 10.704015468785547
+}

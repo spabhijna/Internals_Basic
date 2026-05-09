@@ -1,0 +1,13 @@
+{
+    "search_type": "grid",
+    "n_folds": 3,
+    "total_trials": 18,
+    "best_params": {
+        "n_estimators": 200,
+        "learning_rate": 0.05,
+        "max_depth": 3
+    },
+    "best_mae": 7.892760205794218,
+    "best_cv_mae": 4.1941695247543445,
+    "parent_run_name": "tuning-cartwave"
+}
